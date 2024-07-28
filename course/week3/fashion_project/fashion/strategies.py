@@ -20,6 +20,8 @@ def random_sampling(pred_probs: torch.Tensor, budget : int = 1000) -> List[int]:
   # Note that we fixed the random seed above. Please do not edit.
   # HINT: when you randomly sample, do not choose duplicates.
   # HINT: please ensure indices is a list of integers
+  indices = np.random.choice(len(pred_probs), size=budget).tolist() # Replace is True by default
+  print(f"{type(indices)=}, {type(indices[0])=}")
   # ================================
   return indices
 
@@ -38,6 +40,13 @@ def uncertainty_sampling(pred_probs: torch.Tensor, budget : int = 1000) -> List[
   # for a N-way classification problem.
   # Take the first 1000.
   # HINT: please ensure indices is a list of integers
+
+  # Find how much higher the most likely probability was than the average
+  most_certain_class_probs, _ = pred_probs.max(dim=1)
+  # Subtracting average for fun, but it's not really necessary for sorting...
+  most_certain_class_probs -= chance_prob
+  _, indices = most_certain_class_probs.sort()
+  indices = indices.numpy().tolist()[:budget]
   # ================================
   return indices
 
@@ -52,6 +61,10 @@ def margin_sampling(pred_probs: torch.Tensor, budget : int = 1000) -> List[int]:
   # FILL ME OUT
   # Sort indices by the different in predicted probabilities in the top two classes per example.
   # Take the first 1000.
+  sorted_probs, _ = pred_probs.sort(dim=1, descending=True)
+  margins = sorted_probs[:,0]-sorted_probs[:,1]
+  _, margin_indices = margins.sort()
+  indices = margin_indices.numpy().tolist()[:budget]
   # ================================
   return indices
 
@@ -70,5 +83,8 @@ def entropy_sampling(pred_probs: torch.Tensor, budget : int = 1000) -> List[int]
   # Sort the indices by the entropy of the predicted probabilities from high to low.
   # Take the first 1000.
   # HINT: Add epsilon when taking a log for entropy computation
+  entropy = -torch.sum(pred_probs * torch.log(pred_probs + epsilon), dim=1)
+  _, indices = entropy.sort(descending=True)
+  indices = indices.numpy().tolist()[:budget]
   # ================================
   return indices
