@@ -161,7 +161,22 @@ class TrainIdentifyReview(FlowSpec):
       # Types:
       # --
       # probs_: np.array[float] (shape: |test set|)
-      # TODO
+      X_train, X_test = torch.from_numpy(X[train_index]), torch.from_numpy(X[test_index])
+      y_train, y_test = torch.from_numpy(y[train_index]), torch.from_numpy(y[test_index])
+
+      train_dataset = TensorDataset(X_train, y_train)
+      test_dataset = TensorDataset(X_test, y_test)
+
+      train_dataloader = DataLoader(train_dataset, batch_size=self.config.train.optimizer.batch_size)
+      test_dataloader = DataLoader(test_dataset)
+
+      system = SentimentClassifierSystem(self.config)
+
+      trainer = Trainer(max_epochs = self.config.train.optimizer.max_epochs)
+      trainer.fit(system, train_dataloader)
+
+      predictions = trainer.predict(system, test_dataloader)
+      probs_ = torch.cat(predictions, dim=0).numpy().flatten()
       # ===============================================
       assert probs_ is not None, "`probs_` is not defined."
       probs[test_index] = probs_
@@ -206,7 +221,7 @@ class TrainIdentifyReview(FlowSpec):
     # Types
     # --
     # ranked_label_issues: List[int]
-    # TODO
+    ranked_label_issues = find_label_issues(labels=self.all_df.label.values, pred_probs=prob, return_indices_ranked_by="self_confidence")
     # =============================
     assert ranked_label_issues is not None, "`ranked_label_issues` not defined."
 
@@ -303,7 +318,10 @@ class TrainIdentifyReview(FlowSpec):
     # dm.train_dataset.data = training slice of self.all_df
     # dm.dev_dataset.data = dev slice of self.all_df
     # dm.test_dataset.data = test slice of self.all_df
-    # TODO
+    # All_df was defined by concatting train, dev and test in that order. Hence, we can split on those sizes
+    dm.train_dataset.data = self.all_df.iloc[:train_size]
+    dm.dev_dataset.data = self.all_df.iloc[train_size:train_size+dev_size]
+    dm.test_dataset.data = self.all_df.iloc[train_size+dev_size:]
     # # ====================================
 
     # start from scratch
