@@ -16,6 +16,9 @@ from sentence_transformers import SentenceTransformer
 from rag.paths import DATA_DIR
 from rag.vector import retrieve_documents, get_my_collection_name
 
+from rag.llm import query_openai, get_welcome_message
+from rag.prompts import get_persona, get_retrieval_prompt, get_hyde_response_prompt
+
 load_dotenv()
 
 
@@ -70,6 +73,18 @@ class OptimizeRagParams(FlowSpec):
     # In total this is searching over 8 configurations. In practice, we may search
     # over 100,000s but this should illustruate the point.
     # TODO
+    models = ["all-MiniLM-L6-v2", "thenlper/gte-small"]
+    search_weights = [0, 0.5]
+    hyde_embeddings = [True, False]
+    for m in models:
+      for w in search_weights:
+        for h in hyde_embeddings:
+          hparams.append(
+            {"embedding": m,
+             "text_search_weight": w,
+             "hyde_embeddings": h
+             }
+          )
     # ===========================
     assert len(hparams) > 0, "Remember to complete the code in `get_search_space`"
     assert len(hparams) == 8, "You should have 8 configurations" 
@@ -107,6 +122,22 @@ class OptimizeRagParams(FlowSpec):
       #   2. Track if the correct document appears in the top 3 retrieved documents.
       #      +1 to `hits` if it does. +0 to `hits` if not.
       # TODO
+      if self.input.hyde_embeddings:
+        # If we use hyde embeddings, then we need to embed the hypothetical 
+        # answer instead of the question
+        hypo_answer = query_openai(env["OPENAI_API_KEY"], get_hyde_response_prompt(query))
+        embedding = embedding_model.encode(hypo_answer).tolist()  
+      else:
+        embedding = embedding_model.encode(question).tolist()  
+
+      results = retrieve_documents(
+        self.starpoint_api_key,
+        collection_name=collection_name,
+        query=question,  # regardless of hyde, keep query here
+        query_embedding=embedding,
+        top_k=3,
+        text_search_weight=self.input.text_search_weight,
+      )
       # ===========================
 
     hit_rate = hits / float(len(questions))
