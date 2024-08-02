@@ -34,6 +34,7 @@ def main(args):
       top_k=3,
       text_search_weight=args.text_search_weight,
     )
+    print(results)
     docs = [result['metadata']['text'] for result in results]
     response = query_openai(
       args.openai_api_key, 

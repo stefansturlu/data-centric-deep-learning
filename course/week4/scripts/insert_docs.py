@@ -21,6 +21,7 @@ def main(args):
   # - doc_id: Document ID 
   # - text: Content for the document
   raw = load_documents(override_doc_dir=args.doc_dir)
+  print(f"{args.doc_dir=}")
   print(f'Found {len(raw)} documents to upload.')
 
   # Use the embedding model to embed docs
@@ -49,6 +50,15 @@ def main(args):
     # Please add the document ID to the metadata under the key `doc_id`.
     # Please see docs here: https://docs.starpoint.ai/create-documents 
     # TODO
+    doc = {"embeddings": {
+          "values": embedding_model.encode(raw.iloc[i]["text"]).tolist(),
+          "dimensionality": embedding_dim,
+          },
+          "metadata": {
+            "doc_id": raw.iloc[i]["doc_id"],
+            "text": raw.iloc[i]["text"]
+          }
+        }
     # ===========================
     assert len(doc) > 0, f"Did you complete the code in `insert_docs.py`?"
     documents.append(doc)

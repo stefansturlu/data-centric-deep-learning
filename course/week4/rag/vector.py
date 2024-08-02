@@ -37,7 +37,8 @@ def delete_collection(api_key: str, collection_id: str) -> bool:
   """
   client = Client(api_key=api_key)
   result = client.delete_collection(collection_id=collection_id)
-  return result.success
+  print(f"starpoint delete_collection {result=}")
+  return result["success"]
 
 
 def insert_documents(

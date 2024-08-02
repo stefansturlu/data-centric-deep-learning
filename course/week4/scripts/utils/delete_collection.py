@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
   import argparse
   parser = argparse.ArgumentParser()
-  parser.add_argument('github_username', type=str, help='Your github username')
+  #parser.add_argument('github_username', type=str, help='Your github username')
   parser.add_argument('--embedding', type=str, help='Embedding to use (default: all-MiniLM-L6-v2)')
   parser.add_argument('--hyde', action='store_true', default=False, help='Use hyde embeddings (default: False)')
   parser.add_argument('--starpoint-api-key', type=str, default=env['STARPOINT_API_KEY'], help='Starpoint API key')
